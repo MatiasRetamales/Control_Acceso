@@ -3,6 +3,7 @@ from tkinter import ttk
 import sqlite3
 from entrada import procesar_ingreso
 from salida import procesar_salida
+from exportar_bd_a_excel import exportar_a_excel
 
 # Función para obtener los datos de la base de datos, con soporte para filtros
 def obtener_datos(filtro_columna=None, filtro_criterio=None):
@@ -24,7 +25,7 @@ def obtener_datos(filtro_columna=None, filtro_criterio=None):
 root = tk.Tk()
 root.title("Ingresos y Salidas")
 root.geometry("800x500")
-root.config(bg="#dcdcdc")  # Color de fondo de la ventana principal
+root.config(bg="#005f73")  # Color de fondo de la ventana principal (verde azulado oscuro)
 
 # Crear la tabla (Treeview) para mostrar los datos
 tree = ttk.Treeview(root, columns=("ID", "Casa", "Dueño1", "Fecha Entrada", "Hora Entrada", 
@@ -34,13 +35,13 @@ tree = ttk.Treeview(root, columns=("ID", "Casa", "Dueño1", "Fecha Entrada", "Ho
 # Estilo del Treeview
 style = ttk.Style()
 style.configure("Treeview",
-                background="#e8e8e8",  # Color de fondo de la tabla
+                background="#f0f4f4",  # Color de fondo de las filas
                 foreground="black",     # Color del texto
                 rowheight=25,           # Altura de las filas
                 font=("Arial", 10))     # Fuente de la tabla
 
 style.configure("Treeview.Heading",
-                background="#dcdcdc",  # Color de fondo de las cabeceras
+                background="#008B8B",  # Color de fondo de las cabeceras
                 foreground="black",    # Color del texto de las cabeceras
                 font=("Arial", 12, "bold"))
 
@@ -107,24 +108,28 @@ filtro_entry = tk.Entry(root, font=("Arial", 10))
 filtro_entry.pack(pady=5)
 
 # Crear un frame para los botones, que se alineará en el centro
-button_frame = tk.Frame(root)
+button_frame = tk.Frame(root, bg="#005f73")
 button_frame.pack(pady=10)
 
 # Botón para aplicar el filtro
-btn_filtrar = tk.Button(button_frame, text="Filtrar", command=aplicar_filtro, bg="#4CAF50", fg="white", font=("Arial", 12, "bold"))
+btn_filtrar = tk.Button(button_frame, text="Filtrar", command=aplicar_filtro, bg="#4CAF50", fg="white", font=("Arial", 12, "bold"), relief="flat", padx=20, pady=5)
 btn_filtrar.pack(side=tk.LEFT, padx=10)  # Coloca el botón a la izquierda dentro del frame
 
 # Botón para actualizar los datos de la base de datos
-btn_actualizar = tk.Button(button_frame, text="Actualizar", command=actualizar_datos, bg="#FFC107", fg="black", font=("Arial", 12, "bold"))
+btn_actualizar = tk.Button(button_frame, text="Actualizar", command=actualizar_datos, bg="#FFC107", fg="black", font=("Arial", 12, "bold"), relief="flat", padx=20, pady=5)
 btn_actualizar.pack(side=tk.LEFT, padx=10)  # Coloca el botón a la izquierda dentro del frame
 
 # Botón de ingreso
-btn_ingreso = tk.Button(button_frame, text="Ingreso", command=procesar_ingreso, bg="#FFC107", fg="black", font=("Arial", 12, "bold"))
+btn_ingreso = tk.Button(button_frame, text="Ingreso", command=procesar_ingreso, bg="#4CAF50", fg="white", font=("Arial", 12, "bold"), relief="flat", padx=20, pady=5)
 btn_ingreso.pack(side=tk.LEFT, padx=10)  # Coloca el botón a la izquierda dentro del frame
 
 # Botón de salida
-btn_salida = tk.Button(button_frame, text="Salida", command=procesar_salida, bg="#FFC107", fg="black", font=("Arial", 12, "bold"))
+btn_salida = tk.Button(button_frame, text="Salida", command=procesar_salida, bg="#4CAF50", fg="white", font=("Arial", 12, "bold"), relief="flat", padx=20, pady=5)
 btn_salida.pack(side=tk.LEFT, padx=10)  # Coloca el botón a la izquierda dentro del frame
+
+# Botón de exportación a Excel
+btn_export = tk.Button(button_frame, text="Exportar", command=exportar_a_excel, bg="#008B8B", fg="white", font=("Arial", 12, "bold"), relief="flat", padx=20, pady=5)
+btn_export.pack(side=tk.LEFT, padx=10)  # Coloca el botón a la izquierda dentro del frame
 
 # Cargar los datos al iniciar la aplicación
 cargar_datos()
