@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-import sqlite3
+import qlite3
 from entrada import procesar_ingreso
 from salida import procesar_salida
 from exportar_bd_a_excel import exportar_a_excel
@@ -20,6 +20,9 @@ def obtener_datos(filtro_columna=None, filtro_criterio=None):
     datos = cursor.fetchall()
     conn.close()
     return datos
+
+
+
 
 # Configuración de la interfaz gráfica
 root = tk.Tk()
@@ -90,9 +93,10 @@ def aplicar_filtro():
     filtro_columna = columna_var.get()
     filtro_criterio = filtro_entry.get()
     cargar_datos(filtro_columna, filtro_criterio)
-    
+
 def actualizar_datos():
     cargar_datos() 
+
 
 # Crear campos para seleccionar la columna y el término de búsqueda
 tk.Label(root, text="Filtrar por columna:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
