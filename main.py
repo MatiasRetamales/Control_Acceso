@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-import qlite3
+import sqlite3
 from entrada import procesar_ingreso
 from salida import procesar_salida
 from exportar_bd_a_excel import exportar_a_excel
@@ -20,9 +20,6 @@ def obtener_datos(filtro_columna=None, filtro_criterio=None):
     datos = cursor.fetchall()
     conn.close()
     return datos
-
-
-
 
 # Configuración de la interfaz gráfica
 root = tk.Tk()
@@ -94,9 +91,66 @@ def aplicar_filtro():
     filtro_criterio = filtro_entry.get()
     cargar_datos(filtro_columna, filtro_criterio)
 
+# Función para actualizar los datos
 def actualizar_datos():
     cargar_datos() 
 
+# Función para editar una celda
+# Función para editar una celda
+def editar_celda(event):
+    # Verificar si hay una fila seleccionada
+    selected_item = tree.selection()
+    if not selected_item:  
+        return  
+
+
+    item = selected_item[0]
+    
+
+    columna = tree.identify_column(event.x)
+    columna_num = int(columna[1:]) - 1  
+    
+    # Obtener el valor actual de la celda
+    valor_actual = tree.item(item, 'values')[columna_num]
+    
+    # Crear un Entry para editar el valor
+    entry = tk.Entry(root, font=("Arial", 10))
+    entry.insert(0, valor_actual)
+    entry.place(x=event.x + tree.winfo_x(), y=event.y + tree.winfo_y())
+    
+    # Función para actualizar el valor en la base de datos y en la tabla
+    def actualizar_valor(event):
+        nuevo_valor = entry.get()
+        if nuevo_valor != valor_actual:
+            # Actualizar en la base de datos
+            id_registro = tree.item(item, 'values')[0]  # Suponiendo que la primera columna es el ID
+            columna_nombre = tree["columns"][columna_num]  # Obtener el nombre de la columna
+            conn = sqlite3.connect('ingresos.db')
+            cursor = conn.cursor()
+            cursor.execute(f"UPDATE ingresos SET {columna_nombre} = ? WHERE ID = ?", (nuevo_valor, id_registro))
+            conn.commit()
+            conn.close()
+            
+            # Actualizar el valor en la tabla
+            tree.item(item, values=tree.item(item, 'values')[:columna_num] + (nuevo_valor,) + tree.item(item, 'values')[columna_num + 1:])
+        
+        entry.destroy()  # Eliminar el Entry después de la edición
+
+    entry.bind("<Return>", actualizar_valor)
+    entry.bind("<Escape>", lambda event: entry.destroy())
+
+
+# Función para cerrar el Entry si se hace clic fuera de la tabla
+def cerrar_entry(event):
+    # Verificar si hay un Entry activo
+    if hasattr(root, 'entry_widget'):
+        root.entry_widget.destroy()  # Eliminar el Entry si está presente
+
+# Agregar un evento para detectar el doble clic en cualquier celda
+tree.bind("<Double-1>", editar_celda)
+
+# Agregar un evento global para detectar clics fuera de la tabla
+root.bind("<Button-1>", cerrar_entry)
 
 # Crear campos para seleccionar la columna y el término de búsqueda
 tk.Label(root, text="Filtrar por columna:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
