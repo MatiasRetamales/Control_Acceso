@@ -95,8 +95,7 @@ def aplicar_filtro():
 def actualizar_datos():
     cargar_datos() 
 
-# Función para editar una celda
-# Función para editar una celda
+
 def editar_celda(event):
     # Verificar si hay una fila seleccionada
     selected_item = tree.selection()

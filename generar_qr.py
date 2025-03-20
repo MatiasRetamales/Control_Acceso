@@ -1,6 +1,7 @@
 import pandas as pd
 import qrcode
 import json
+import os
 
 def generar_qr():
     # Cargar el archivo Excel
@@ -31,9 +32,16 @@ def generar_qr():
 
         # Crear el QR
         qr = qrcode.make(qr_json)
+        
+        directorio = 'CodigosQR'
+        
+        # Crear la carpeta si no existe
+        if not os.path.exists(directorio):
+         os.makedirs(directorio)
+        
 
         # Guardar el QR con el nombre de la casa
-        qr.save(f"QR_Casa_{casa}.png")
+        qr.save(os.path.join(directorio, f"QR_Casa_{casa}.png"))
 
     print("✅ Códigos QR generados exitosamente.")
 
