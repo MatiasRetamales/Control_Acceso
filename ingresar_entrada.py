@@ -20,7 +20,9 @@ def ingresar_entrada(ingreso):
             personas INTEGER,
             patente TEXT,
             fecha_salida TEXT,
-            hora_salida TEXT
+            hora_salida TEXT,
+            observaciones TEXT
+            
         )
     ''')
     

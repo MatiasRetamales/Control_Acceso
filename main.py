@@ -29,7 +29,7 @@ root.config(bg="#005f73")  # Color de fondo de la ventana principal (verde azula
 
 # Crear la tabla (Treeview) para mostrar los datos
 tree = ttk.Treeview(root, columns=("ID", "Casa", "Dueño1", "Fecha Entrada", "Hora Entrada", 
-                                   "Quien Ingresa", "Personas", "Patente", "Fecha Salida", "Hora Salida"), 
+                                   "Quien Ingresa", "Personas", "Patente", "Fecha Salida", "Hora Salida", "Observaciones"), 
                     show="headings")
 
 # Estilo del Treeview
@@ -56,6 +56,8 @@ tree.heading("Personas", text="Número de Personas")
 tree.heading("Patente", text="Patente")
 tree.heading("Fecha Salida", text="Fecha Salida")
 tree.heading("Hora Salida", text="Hora Salida")
+tree.heading("Observaciones", text="Observaciones")
+
 
 # Añadir las columnas de la tabla
 tree.column("ID", width=50, anchor="center")
@@ -68,6 +70,7 @@ tree.column("Personas", width=80, anchor="center")
 tree.column("Patente", width=100)
 tree.column("Fecha Salida", width=100)
 tree.column("Hora Salida", width=100)
+tree.column("Observaciones", width=100)
 
 # Colocar la tabla en la ventana
 tree.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
@@ -97,59 +100,51 @@ def actualizar_datos():
 
 
 def editar_celda(event):
-    # Verificar si hay una fila seleccionada
+    """Permite editar solo la columna 'Observaciones'."""
     selected_item = tree.selection()
-    if not selected_item:  
-        return  
-
+    if not selected_item:
+        return
 
     item = selected_item[0]
-    
+    col = tree.identify_column(event.x)  # Ej: "#3"
+    col_index = int(col[1:]) - 1  # Convertir "#3" en índice
 
-    columna = tree.identify_column(event.x)
-    columna_num = int(columna[1:]) - 1  
-    
-    # Obtener el valor actual de la celda
-    valor_actual = tree.item(item, 'values')[columna_num]
-    
-    # Crear un Entry para editar el valor
+    # Verificar si la columna es 'OBSERVACIONES'
+    if tree["columns"][col_index] != "Observaciones":
+        return
+
+    # Obtener el valor actual
+    valor_actual = tree.item(item, 'values')[col_index]
+
+    # Crear Entry en la misma posición
     entry = tk.Entry(root, font=("Arial", 10))
     entry.insert(0, valor_actual)
     entry.place(x=event.x + tree.winfo_x(), y=event.y + tree.winfo_y())
-    
-    # Función para actualizar el valor en la base de datos y en la tabla
+    entry.focus()
+
     def actualizar_valor(event):
+        """Guarda el nuevo valor en la base de datos y la tabla."""
         nuevo_valor = entry.get()
         if nuevo_valor != valor_actual:
-            # Actualizar en la base de datos
             id_registro = tree.item(item, 'values')[0]  # Suponiendo que la primera columna es el ID
-            columna_nombre = tree["columns"][columna_num]  # Obtener el nombre de la columna
             conn = sqlite3.connect('ingresos.db')
             cursor = conn.cursor()
-            cursor.execute(f"UPDATE ingresos SET {columna_nombre} = ? WHERE ID = ?", (nuevo_valor, id_registro))
+            cursor.execute("UPDATE ingresos SET Observaciones = ? WHERE ID = ?", (nuevo_valor, id_registro))
             conn.commit()
             conn.close()
-            
-            # Actualizar el valor en la tabla
-            tree.item(item, values=tree.item(item, 'values')[:columna_num] + (nuevo_valor,) + tree.item(item, 'values')[columna_num + 1:])
-        
-        entry.destroy()  # Eliminar el Entry después de la edición
+
+            # Actualizar la tabla visualmente
+            valores = list(tree.item(item, 'values'))
+            valores[col_index] = nuevo_valor
+            tree.item(item, values=valores)
+
+        entry.destroy()
 
     entry.bind("<Return>", actualizar_valor)
-    entry.bind("<Escape>", lambda event: entry.destroy())
+    entry.bind("<Escape>", lambda e: entry.destroy())
 
-
-# Función para cerrar el Entry si se hace clic fuera de la tabla
-def cerrar_entry(event):
-    # Verificar si hay un Entry activo
-    if hasattr(root, 'entry_widget'):
-        root.entry_widget.destroy()  # Eliminar el Entry si está presente
-
-# Agregar un evento para detectar el doble clic en cualquier celda
+# Evento para editar celdas al hacer doble clic
 tree.bind("<Double-1>", editar_celda)
-
-# Agregar un evento global para detectar clics fuera de la tabla
-root.bind("<Button-1>", cerrar_entry)
 
 # Crear campos para seleccionar la columna y el término de búsqueda
 tk.Label(root, text="Filtrar por columna:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
