@@ -58,7 +58,6 @@ tree.heading("Fecha Salida", text="Fecha Salida")
 tree.heading("Hora Salida", text="Hora Salida")
 tree.heading("Observaciones", text="Observaciones")
 
-
 # Añadir las columnas de la tabla
 tree.column("ID", width=50, anchor="center")
 tree.column("Casa", width=100)
@@ -74,6 +73,105 @@ tree.column("Observaciones", width=100)
 
 # Colocar la tabla en la ventana
 tree.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+# Función para editar celda
+def editar_celda(event):
+    """Permite editar cualquier celda de la tabla."""
+    selected_item = tree.selection()
+    if not selected_item:
+        # Si no hay elemento seleccionado, intenta seleccionar el elemento bajo el cursor
+        item = tree.identify_row(event.y)
+        if not item:
+            return
+        tree.selection_set(item)
+        selected_item = [item]
+    
+    item = selected_item[0]
+    col = tree.identify_column(event.x)  # Ej: "#3"
+    col_index = int(col[1:]) - 1  # Convertir "#3" en índice
+    
+    # Obtener las coordenadas exactas de la celda
+    bbox = tree.bbox(item, col)
+    if not bbox:  # Si no se puede obtener la posición
+        return
+    
+    # Obtener el valor actual con manejo seguro para índices fuera de rango
+    valores = tree.item(item, 'values')
+    
+    # Asegurarse de que valores sea una lista y tenga suficientes elementos
+    if not valores:
+        valores = [""] * 11  # Crear una lista con valores vacíos para todas las columnas
+    elif len(valores) <= col_index:
+        # Si no hay suficientes valores, extender la lista
+        valores = list(valores) + [""] * (col_index + 1 - len(valores))
+    
+    valor_actual = valores[col_index] if col_index < len(valores) else ""
+    
+    # Crear Entry
+    entry = tk.Entry(tree, font=("Arial", 10))
+    entry.insert(0, valor_actual if valor_actual else "")
+    
+    # Posicionar el entry exactamente sobre la celda
+    entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+    entry.focus_set()
+    
+    # Mapeo directo de nombres de columnas a la base de datos
+    mapeo_columnas = {
+        0: "id",
+        1: "casa",
+        2: "dueño1",
+        3: "fecha_entrada",
+        4: "hora_entrada",
+        5: "quien_ingresa",
+        6: "personas",
+        7: "patente",
+        8: "fecha_salida",
+        9: "hora_salida",
+        10: "observaciones"
+    }
+    
+    # Obtener el nombre correcto de la columna para la base de datos
+    nombre_columna = mapeo_columnas.get(col_index)
+    
+    def actualizar_valor(event=None):
+        """Guarda el nuevo valor en la base de datos y la tabla."""
+        nuevo_valor = entry.get()
+        
+        # Solo actualizar si el valor ha cambiado
+        if str(nuevo_valor) != str(valor_actual):
+            id_registro = valores[0] if valores and len(valores) > 0 else None
+            if id_registro is None:
+                print("No se puede actualizar: ID no disponible")
+                entry.destroy()
+                return
+            
+            conn = sqlite3.connect('ingresos.db')
+            cursor = conn.cursor()
+            
+            # Construir la consulta SQL con el nombre de columna correcto
+            query = f"UPDATE ingresos SET {nombre_columna} = ? WHERE ID = ?"
+            try:
+                cursor.execute(query, (nuevo_valor, id_registro))
+                conn.commit()
+                
+                # Actualizar la tabla visualmente
+                nueva_lista_valores = list(valores)
+                nueva_lista_valores[col_index] = nuevo_valor
+                tree.item(item, values=nueva_lista_valores)
+            except sqlite3.Error as e:
+                print(f"Error en la base de datos: {e}")
+            finally:
+                conn.close()
+        
+        entry.destroy()
+    
+    # Configurar los eventos
+    entry.bind("<Return>", actualizar_valor)
+    entry.bind("<Escape>", lambda e: entry.destroy())
+    entry.bind("<FocusOut>", actualizar_valor)
+
+# Asegurarse de vincular el evento de doble clic
+tree.bind("<Double-1>", editar_celda)
 
 # Función para cargar los datos en la tabla
 def cargar_datos(filtro_columna=None, filtro_criterio=None):
@@ -96,66 +194,18 @@ def aplicar_filtro():
 
 # Función para actualizar los datos
 def actualizar_datos():
-    cargar_datos() 
-
-
-def editar_celda(event):
-    """Permite editar solo la columna 'Observaciones'."""
-    selected_item = tree.selection()
-    if not selected_item:
-        return
-
-    item = selected_item[0]
-    col = tree.identify_column(event.x)  # Ej: "#3"
-    col_index = int(col[1:]) - 1  # Convertir "#3" en índice
-
-    # Verificar si la columna es 'OBSERVACIONES'
-    if tree["columns"][col_index] != "Observaciones":
-        return
-
-    # Obtener el valor actual
-    valor_actual = tree.item(item, 'values')[col_index]
-
-    # Crear Entry en la misma posición
-    entry = tk.Entry(root, font=("Arial", 10))
-    entry.insert(0, valor_actual)
-    entry.place(x=event.x + tree.winfo_x(), y=event.y + tree.winfo_y())
-    entry.focus()
-
-    def actualizar_valor(event):
-        """Guarda el nuevo valor en la base de datos y la tabla."""
-        nuevo_valor = entry.get()
-        if nuevo_valor != valor_actual:
-            id_registro = tree.item(item, 'values')[0]  # Suponiendo que la primera columna es el ID
-            conn = sqlite3.connect('ingresos.db')
-            cursor = conn.cursor()
-            cursor.execute("UPDATE ingresos SET Observaciones = ? WHERE ID = ?", (nuevo_valor, id_registro))
-            conn.commit()
-            conn.close()
-
-            # Actualizar la tabla visualmente
-            valores = list(tree.item(item, 'values'))
-            valores[col_index] = nuevo_valor
-            tree.item(item, values=valores)
-
-        entry.destroy()
-
-    entry.bind("<Return>", actualizar_valor)
-    entry.bind("<Escape>", lambda e: entry.destroy())
-
-# Evento para editar celdas al hacer doble clic
-tree.bind("<Double-1>", editar_celda)
+    cargar_datos()
 
 # Crear campos para seleccionar la columna y el término de búsqueda
-tk.Label(root, text="Filtrar por columna:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
+tk.Label(root, text="Filtrar por columna:", bg="#005f73", fg="white", font=("Arial", 12)).pack(pady=5)
 columna_var = tk.StringVar()
 columna_menu = ttk.Combobox(root, textvariable=columna_var, values=["ID", "Casa", "Dueño1", "Fecha Entrada", 
                                                                    "hora_entrada", "quien_ingresa", "Personas", 
-                                                                   "Patente", "fecha_salida", "hora_salida"], font=("Arial", 10))
+                                                                   "Patente", "fecha_salida", "hora_salida", "Observaciones"], font=("Arial", 10))
 columna_menu.set("Casa")  # Valor por defecto
 columna_menu.pack(pady=5)
 
-tk.Label(root, text="Filtrar criterio:", bg="#f0f0f0", font=("Arial", 12)).pack(pady=5)
+tk.Label(root, text="Filtrar criterio:", bg="#005f73", fg="white", font=("Arial", 12)).pack(pady=5)
 filtro_entry = tk.Entry(root, font=("Arial", 10))
 filtro_entry.pack(pady=5)
 
