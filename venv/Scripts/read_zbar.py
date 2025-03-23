@@ -1,4 +1,4 @@
-#!C:\Users\Monitos\Desktop\Sistema_QR\venv\Scripts\python.exe
+#!C:\Users\Monitos\Desktop\Proyectos\Control_acceso\venv\Scripts\python.exe
 from __future__ import print_function
 
 import argparse
